@@ -378,12 +378,12 @@ fn split_path(path: &str) -> Result<(String, String)> {
             let trimmed = &path_str[2..];
             #[cfg(windows)]
             {
-                // Windows平台：将反斜杠替换为正斜杠
+                // Windows platform: replace backslashes with forward slashes
                 trimmed.replace('\\', "/")
             }
             #[cfg(not(windows))]
             {
-                // 非Windows平台：保持原有分隔符
+                // Non-Windows platform: keep original separators
                 trimmed.to_string()
             }
         })
