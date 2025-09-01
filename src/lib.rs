@@ -15,7 +15,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #[cfg(target_os = "wasi")]
-#[allow(static_mut_refs,unused)]
+#[allow(static_mut_refs, unused)]
 mod bindings;
 #[cfg(target_os = "wasi")]
 mod component;
@@ -42,8 +42,10 @@ use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 #[cfg(target_os = "wasi")]
 use wasi_ext::{SocketAddr, TcpStream, ToSocketAddrs};
 
-static SOCKET_ADDRESSES: LazyLock<Arc<RwLock<HashMap<u32, SocketAddr>>>> = LazyLock::new(|| Arc::new(RwLock::new(HashMap::new())));
-static TCP_STREAMS: LazyLock<Arc<RwLock<HashMap<u32, Arc<RwLock<TcpStream>>>>>> = LazyLock::new(|| Arc::new(RwLock::new(HashMap::new())));
+static SOCKET_ADDRESSES: LazyLock<Arc<RwLock<HashMap<u32, SocketAddr>>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(HashMap::new())));
+static TCP_STREAMS: LazyLock<Arc<RwLock<HashMap<u32, Arc<RwLock<TcpStream>>>>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(HashMap::new())));
 
 fn get_socket_address(id: &u32) -> Result<SocketAddr> {
     let socket_addresses = SOCKET_ADDRESSES.read().unwrap();
@@ -234,8 +236,18 @@ fn parse_url(url: &str) -> Result<MountArgs> {
         "specified URL contains bad mount port",
     )?;
     let txsize_def: u32 = 1048576; // XXX: mimic libnfs default of 1 MiB
-    let rsize = get_url_query_param(&params, "rsize", txsize_def, "specified URL contains bad max read size value")?;
-    let wsize = get_url_query_param(&params, "wsize", txsize_def, "specified URL contains bad max write size value")?;
+    let rsize = get_url_query_param(
+        &params,
+        "rsize",
+        txsize_def,
+        "specified URL contains bad max read size value",
+    )?;
+    let wsize = get_url_query_param(
+        &params,
+        "wsize",
+        txsize_def,
+        "specified URL contains bad max write size value",
+    )?;
     let host = parsed_url.host_str().unwrap_or_default().to_string();
     Ok(MountArgs {
         versions,
@@ -300,7 +312,10 @@ fn mount(args: MountArgs) -> Result<Box<dyn Mount>> {
             NFSVersion::NFSv3 => nfs3::mount(&args),
             NFSVersion::NFSv4p1 => nfs4p1::mount(&args),
             NFSVersion::NFSv4 => Err(Error::new(ErrorKind::Unsupported, "NFSv4 is not supported")),
-            NFSVersion::NFSv4p2 => Err(Error::new(ErrorKind::Unsupported, "NFSv4.2 is not supported")),
+            NFSVersion::NFSv4p2 => Err(Error::new(
+                ErrorKind::Unsupported,
+                "NFSv4.2 is not supported",
+            )),
             _ => unreachable!(),
         };
         if res.is_ok() {
@@ -313,7 +328,8 @@ fn mount(args: MountArgs) -> Result<Box<dyn Mount>> {
 
 fn squash_mount_errors(errs: Vec<Error>) -> Error {
     let mut unsupported_err = "".to_string();
-    let errs: Vec<Error> = errs.into_iter()
+    let errs: Vec<Error> = errs
+        .into_iter()
         .map(|err| {
             if err.kind() == ErrorKind::Unsupported {
                 if unsupported_err.is_empty() {
@@ -347,15 +363,32 @@ fn squash_mount_errors(errs: Vec<Error>) -> Error {
 fn split_path(path: &str) -> Result<(String, String)> {
     let cleaned = path_clean::clean(format!("/=/{}", path));
     if !cleaned.starts_with("/=/") {
-        return Err(Error::new(ErrorKind::InvalidInput, "invalid path specified"));
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "invalid path specified",
+        ));
     }
     if cleaned.eq(std::path::Path::new("/=/")) {
         return Ok(("/".to_string(), "".to_string()));
     }
     let dir = cleaned
         .parent()
-        .map(|x| x.to_string_lossy()[2..].to_string())
+        .map(|x| {
+            let path_str = x.to_string_lossy();
+            let trimmed = &path_str[2..];
+            #[cfg(windows)]
+            {
+                // Windows平台：将反斜杠替换为正斜杠
+                trimmed.replace('\\', "/")
+            }
+            #[cfg(not(windows))]
+            {
+                // 非Windows平台：保持原有分隔符
+                trimmed.to_string()
+            }
+        })
         .unwrap();
+
     let name = cleaned
         .file_name()
         .unwrap_or_default()
@@ -780,9 +813,7 @@ mod tests {
 
     #[test]
     fn squash_mount_errors_with_only_non_unsupported_err() {
-        let errs = vec![
-            Error::new(ErrorKind::Other, "some error"),
-        ];
+        let errs = vec![Error::new(ErrorKind::Other, "some error")];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Other);
         assert_eq!(err.to_string(), "some error".to_string());
@@ -797,7 +828,10 @@ mod tests {
         ];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Other);
-        assert_eq!(err.to_string(), "some error - some other error - some final error".to_string());
+        assert_eq!(
+            err.to_string(),
+            "some error - some other error - some final error".to_string()
+        );
     }
 
     #[test]
@@ -819,7 +853,10 @@ mod tests {
         ];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Unsupported);
-        assert_eq!(err.to_string(), "NFSv4 and NFSv4.2 are not supported".to_string());
+        assert_eq!(
+            err.to_string(),
+            "NFSv4 and NFSv4.2 are not supported".to_string()
+        );
     }
 
     #[test]
@@ -830,7 +867,10 @@ mod tests {
         ];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Other);
-        assert_eq!(err.to_string(), "some error - NFSv4.2 is not supported".to_string());
+        assert_eq!(
+            err.to_string(),
+            "some error - NFSv4.2 is not supported".to_string()
+        );
     }
 
     #[test]
@@ -842,7 +882,10 @@ mod tests {
         ];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Other);
-        assert_eq!(err.to_string(), "some error - NFSv4 and NFSv4.2 are not supported".to_string());
+        assert_eq!(
+            err.to_string(),
+            "some error - NFSv4 and NFSv4.2 are not supported".to_string()
+        );
     }
 
     #[test]
@@ -854,7 +897,10 @@ mod tests {
         ];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Other);
-        assert_eq!(err.to_string(), "some error - some other error - NFSv4 is not supported".to_string());
+        assert_eq!(
+            err.to_string(),
+            "some error - some other error - NFSv4 is not supported".to_string()
+        );
     }
 
     #[test]
@@ -867,7 +913,10 @@ mod tests {
         ];
         let err = squash_mount_errors(errs);
         assert_eq!(err.kind(), ErrorKind::Other);
-        assert_eq!(err.to_string(), "some error - some other error - NFSv4 and NFSv4.2 are not supported".to_string());
+        assert_eq!(
+            err.to_string(),
+            "some error - some other error - NFSv4 and NFSv4.2 are not supported".to_string()
+        );
     }
 
     #[test]
@@ -1238,10 +1287,7 @@ mod tests {
         for entry in res.unwrap() {
             post_mkdir_names_plus.push(entry.file_name);
         }
-        let expected_post_mkdir_names = vec![
-            "comment".to_string(),
-            "place".to_string(),
-        ];
+        let expected_post_mkdir_names = vec!["comment".to_string(), "place".to_string()];
         assert_eq!(post_mkdir_names, expected_post_mkdir_names);
         assert_eq!(post_mkdir_names_plus, expected_post_mkdir_names);
         let mut expected_post_create_names = Vec::new();

@@ -26,7 +26,7 @@ impl Mount {
             attr: None,
         });
         for n in &path_clean::clean(path) {
-            if res.as_mut().is_ok() && n != "" && n != "/" && n != "." {
+            if res.as_mut().is_ok() && n != "" && n != "/" && n != "." && n != "\\" {
                 res = self.lookup(&res.as_mut().ok().unwrap().fh, &n.to_string_lossy());
             }
         }
