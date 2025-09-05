@@ -723,7 +723,7 @@ impl Into<NFSVersion> for &str {
 }
 
 /// Struct describing attributes for an NFS entry.
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct Attr {
     pub type_: u32,
     pub file_mode: u32,
@@ -741,7 +741,7 @@ pub struct Attr {
 }
 
 /// Struct describing an NFS entry response as returned by various procedures.
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct ObjRes {
     pub fh: Vec<u8>,
     pub attr: Option<Attr>,
