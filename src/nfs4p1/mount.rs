@@ -452,7 +452,7 @@ impl crate::Mount for Mount4p1 {
         self.setattr(&obj_res.fh, guard_mtime, mode, uid, gid, size, atime, mtime)
     }
 
-    fn getfh(&self) -> Result<()> {
+    fn getfh(&self) -> Vec<u8> {
         unimplemented!("getfh")
     }
 

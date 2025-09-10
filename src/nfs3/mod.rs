@@ -144,6 +144,10 @@ impl Mount {
             + args.pack(out)?)
     }
 
+    fn getfh(&self) -> Vec<u8> {
+        self.fh.clone()
+    }
+
     nfs3_call!(_access, Access, ACCESS3args, ACCESS3res);
     nfs3_call!(_commit, Commit, COMMIT3args, COMMIT3res);
     nfs3_call!(_create, Create, CREATE3args, CREATE3res);
@@ -565,7 +569,7 @@ impl<Out: xdr_codec::Write> Pack<Out> for sattr3 {
     }
 }
 
-#[allow(unused,non_camel_case_types)]
+#[allow(unused, non_camel_case_types)]
 #[derive(Debug, PartialEq)]
 enum createhow3 {
     UNCHECKED(sattr3),

@@ -253,8 +253,7 @@ pub trait Mount: std::fmt::Debug + Send + Sync {
     ) -> Result<()>;
 
     /// Procedure GETFH returns the current filehandle value.
-    // TODO: code doc example for GETFH procedure
-    fn getfh(&self) -> Result<()>; // FIXME: missing params + return type
+    fn getfh(&self) -> Vec<u8>;
 
     /// Procedure LINK creates a hard link.
     ///

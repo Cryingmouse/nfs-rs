@@ -138,8 +138,8 @@ impl crate::Mount for Mount3 {
             .setattr_path(path, specify_guard, mode, uid, gid, size, atime, mtime)
     }
 
-    fn getfh(&self) -> Result<()> {
-        Err(Error::new(ErrorKind::Unsupported, "not supported"))
+    fn getfh(&self) -> Vec<u8> {
+        self.m.getfh()
     }
 
     fn link(
